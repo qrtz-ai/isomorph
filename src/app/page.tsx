@@ -1,16 +1,24 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 export default function Home() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({ streamProtocol: "text" });
+  const { messages, sendMessage, status } = useChat();
+  const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isLoading = status === "streaming" || status === "submitted";
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    sendMessage({ text: input });
+    setInput("");
+  };
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100">
@@ -45,12 +53,7 @@ export default function Home() {
               ].map((example, i) => (
                 <button
                   key={i}
-                  onClick={() => {
-                    const fakeEvent = {
-                      target: { value: example },
-                    } as React.ChangeEvent<HTMLInputElement>;
-                    handleInputChange(fakeEvent);
-                  }}
+                  onClick={() => setInput(example)}
                   className="p-3 rounded-lg border border-zinc-800 hover:border-emerald-400/50 hover:bg-zinc-900 transition-colors text-left text-zinc-400 hover:text-zinc-200"
                 >
                   {example}
@@ -78,7 +81,11 @@ export default function Home() {
                 </div>
               )}
               <div className="whitespace-pre-wrap prose prose-invert prose-sm max-w-none">
-                {m.content}
+                {m.parts
+                  ?.filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
+                  .map((p, i) => (
+                    <span key={i}>{p.text}</span>
+                  ))}
               </div>
             </div>
           </div>
@@ -107,7 +114,7 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="flex gap-3 max-w-3xl mx-auto">
           <input
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Describe a problem from any domain..."
             className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-400/50 focus:ring-1 focus:ring-emerald-400/20"
             disabled={isLoading}
