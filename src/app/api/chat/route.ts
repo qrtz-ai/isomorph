@@ -1,5 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
+import { streamText, UIMessage, convertToModelMessages } from "ai";
 
 export const maxDuration = 60;
 
@@ -28,12 +28,12 @@ Use clear headers for each step. Be specific and concrete, not hand-wavy. The ma
 If the abstract shape of the problem reminds you of a well-known mathematical structure (group, graph, topology, etc.), name it.`;
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const { messages }: { messages: UIMessage[] } = await req.json();
 
   const result = streamText({
     model: anthropic("claude-sonnet-4-20250514"),
     system: SYSTEM_PROMPT,
-    messages,
+    messages: await convertToModelMessages(messages),
   });
 
   return result.toUIMessageStreamResponse();
