@@ -5,7 +5,7 @@ import { useRef, useEffect } from "react";
 
 export default function Home() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat();
+    useChat({ streamProtocol: "text" });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
